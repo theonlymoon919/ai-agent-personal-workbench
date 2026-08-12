@@ -75,6 +75,8 @@ class HermesAssetInstallerTests(unittest.TestCase):
             skill_text = (installed / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("delete_finance_transaction", skill_text)
             self.assertIn("confirmed=true", skill_text)
+            self.assertIn("delete_weight_entry", skill_text)
+            self.assertIn("独立的演示账号", skill_text)
             self.assertIn("Keep this line.", soul_text)
             self.assertEqual(soul_text.count(MANAGED_START), 1)
             self.assertNotIn("plaintext credential", soul_text)

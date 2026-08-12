@@ -68,6 +68,7 @@ class WaterRecord(BaseModel):
 
 class WeightRecord(BaseModel):
     kg: float = Field(gt=20, le=400)
+    record_date: date | None = None
 
 
 class LearningPlanCreate(BaseModel):

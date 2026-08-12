@@ -1115,7 +1115,7 @@ def create_cloud_app(
             context.identity.workspace_public_id,
             "user",
             context.identity.user_public_id,
-        ).record_weight(payload.kg)
+        ).record_weight(payload.kg, record_date=payload.record_date)
 
     async def _store_health_upload(
         kind: str,

@@ -42,7 +42,7 @@ from backend.app.cloud.storage import LocalPrivateObjectStore
 from backend.app.cloud.image_processing import normalize_health_image
 from backend.app.cloud.rate_limit import MemoryRateLimiter
 from backend.app.china_calendar import calendar_days
-from backend.app.models import LearningPlanUpdate, ProjectPhaseCreate, TaskCreate, TaskUpdate
+from backend.app.models import LearningPlanUpdate, ProjectPhaseCreate, TaskCreate, TaskUpdate, WeightRecord
 
 
 class CloudRateLimitTests(unittest.TestCase):
@@ -249,7 +249,7 @@ class CloudMcpContractTests(unittest.TestCase):
         app = create_cloud_app(settings)
         self.assertTrue(any(route.path == "/mcp" for route in app.routes))
         tools = set(app.state.cloud_mcp._tool_manager._tools)
-        self.assertGreaterEqual(len(tools), 45)
+        self.assertGreaterEqual(len(tools), 48)
         self.assertTrue(
             {
                 "claim_next_agent_job",
@@ -261,6 +261,9 @@ class CloudMcpContractTests(unittest.TestCase):
                 "restore_finance_transaction",
                 "list_finance_budgets",
                 "delete_finance_budget",
+                "list_weight_entries",
+                "delete_weight_entry",
+                "restore_weight_entry",
                 "save_generated_learning_plan",
                 "save_content_item",
             }.issubset(tools)
@@ -272,6 +275,11 @@ class CloudMcpContractTests(unittest.TestCase):
         delete_budget = app.state.cloud_mcp._tool_manager._tools["delete_finance_budget"]
         self.assertIn("confirmed", delete_budget.parameters["properties"])
         self.assertIn("归档", delete_budget.description)
+        record_weight = app.state.cloud_mcp._tool_manager._tools["record_weight"]
+        self.assertIn("record_date", record_weight.parameters["properties"])
+        delete_weight = app.state.cloud_mcp._tool_manager._tools["delete_weight_entry"]
+        self.assertIn("confirmed", delete_weight.parameters["properties"])
+        self.assertIn("同日饮水", delete_weight.description)
         with TestClient(app) as client:
             response = client.post(
                 "/mcp/",
@@ -472,6 +480,50 @@ class CloudProjectPlanningContractTests(unittest.TestCase):
         self.assertIn("post", paths["/api/health/records/{record_id}/restore"])
         self.assertIn("post", paths["/api/agent/health/records/{record_id}/restore"])
 
+    def test_weight_delete_tool_previews_before_writing(self) -> None:
+        tools = self.app().state.cloud_mcp._tool_manager._tools
+        entry_id = str(uuid.uuid4())
+
+        class FakeHealth:
+            def __init__(self) -> None:
+                self.deleted: list[bool] = []
+
+            async def get_weight_entry(self, _public_id: uuid.UUID, include_deleted: bool = True) -> dict:
+                return {"id": entry_id, "record_date": "2026-08-12", "weight_kg": 53.0, "deleted": False}
+
+            async def set_weight_entry_deleted(self, _public_id: uuid.UUID, deleted: bool) -> dict:
+                self.deleted.append(deleted)
+                return {"id": entry_id, "weight_kg": 53.0, "deleted": deleted}
+
+        health = FakeHealth()
+        context = type("FakeContext", (), {"health": health})()
+        scopes: list[str] = []
+
+        class FakeOpen:
+            async def __aenter__(self):
+                return context
+
+            async def __aexit__(self, _exc_type, _exc, _traceback):
+                return False
+
+        def fake_open(_self, scope: str) -> FakeOpen:
+            scopes.append(scope)
+            return FakeOpen()
+
+        with patch("backend.app.cloud.mcp_server.AgentToolTransactions.open", new=fake_open):
+            preview = asyncio.run(tools["delete_weight_entry"].fn(weight_entry_id=entry_id))
+            self.assertTrue(preview["confirmation_required"])
+            self.assertEqual(health.deleted, [])
+            self.assertEqual(scopes[-1], "workbench:read")
+            deleted = asyncio.run(tools["delete_weight_entry"].fn(weight_entry_id=entry_id, confirmed=True))
+            self.assertTrue(deleted["deleted"])
+            self.assertEqual(health.deleted, [True])
+            self.assertEqual(scopes[-1], "workbench:write")
+
+    def test_weight_schema_accepts_a_historical_record_date(self) -> None:
+        payload = WeightRecord(kg=56.0, record_date=date(2026, 8, 1))
+        self.assertEqual(payload.record_date, date(2026, 8, 1))
+
     def test_mcp_exposes_full_project_and_recycle_bin_workflow(self) -> None:
         tools = set(self.app().state.cloud_mcp._tool_manager._tools)
         expected = {
@@ -480,6 +532,7 @@ class CloudProjectPlanningContractTests(unittest.TestCase):
             "create_project_phase", "update_project_phase", "delete_project_phase",
             "restore_project_phase", "create_task", "update_task", "delete_task", "restore_task",
             "update_health_record", "delete_health_record", "restore_health_record",
+            "list_weight_entries", "delete_weight_entry", "restore_weight_entry",
         }
         self.assertTrue(expected.issubset(tools), sorted(expected - tools))
 

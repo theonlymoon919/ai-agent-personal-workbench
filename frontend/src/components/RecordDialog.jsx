@@ -70,7 +70,7 @@ export function RecordDialog({ type, data, onClose, onComplete }) {
       if (type === 'water') record = await api.recordWater(Number(water))
       if (type === 'meal' || type === 'exercise') record = await api.upload(type, file, { recordDate, mealSlot: type === 'meal' ? mealSlot : '' })
       if (type === 'weight') {
-        if (weight) record = await api.recordWeight(Number(weight))
+        if (weight) record = await api.recordWeight(Number(weight), recordDate)
         if (file) record = await api.upload('weight', file, { recordDate })
       }
       if (type === 'growth') record = await api.createLearningPlan({ name: title, goal })
@@ -118,7 +118,10 @@ export function RecordDialog({ type, data, onClose, onComplete }) {
             <div className="amount-presets">{Array.from(new Set([data?.health?.cup_ml || 250, 200, 350, 500])).slice(0, 4).map((amount) => <button type="button" className={Number(water) === amount ? 'is-active' : ''} onClick={() => setWater(amount)} key={amount}>{amount} ml</button>)}</div>
           </> : null}
 
-          {type === 'weight' ? <label>当前体重<div className="input-with-unit"><input autoFocus type="number" min="20" max="400" step="0.1" value={weight} onChange={(event) => setWeight(event.target.value)} placeholder="例如 62.5" /><span>kg</span></div></label> : null}
+          {type === 'weight' ? <>
+            <label>体重数值<div className="input-with-unit"><input autoFocus type="number" min="20" max="400" step="0.1" value={weight} onChange={(event) => setWeight(event.target.value)} placeholder="例如 62.5" /><span>kg</span></div></label>
+            <label>记录日期<input type="date" required max={localDateValue()} value={recordDate} onChange={(event) => setRecordDate(event.target.value)} /></label>
+          </> : null}
 
           {type === 'growth' ? <><label>想学习什么<input autoFocus required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：围棋入门" /></label><label>你的目标<textarea maxLength={1000} rows="4" value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="例如：30 天内掌握基本规则并能完成一盘棋" /></label></> : null}
 
