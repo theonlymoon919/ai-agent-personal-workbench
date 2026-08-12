@@ -4,6 +4,20 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## [Unreleased]
 
+## [0.3.0-alpha.5] - 2026-08-13
+
+### Added
+
+- Added optional historical dates to manual weight recording while rejecting future dates.
+- Added MCP tools to list, soft-delete, and restore individual manual weight entries by stable public ID.
+- Added a Chinese video-demo workflow for isolated demo accounts, workspaces, browser profiles, and Hermes profiles.
+
+### Changed
+
+- Added a date picker to web quick weight entry.
+- Required a read-only confirmation preview before deleting a manual weight entry.
+- Strengthened Hermes rules so demo data is never created by deleting or rewriting a real workspace.
+
 ## [0.3.0-alpha.4] - 2026-08-12
 
 ### Fixed
