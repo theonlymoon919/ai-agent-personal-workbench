@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible problem without private data
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, private records, attachments, database dumps, `.env` files, or production logs. Use SECURITY.md for vulnerabilities.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: v0.3.0-alpha.3 or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options: [Web, Android, MCP, Docker deployment, Migration, Backup/export, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction with synthetic data
+      description: Provide the smallest safe example and expected/actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Relevant checks
+      description: Include redacted health output, browser/Android version, or test command results only when safe.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I replaced all personal data, domains, paths, IDs, tokens, cookies, and secrets with synthetic examples.
+          required: true

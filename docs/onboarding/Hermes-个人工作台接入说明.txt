@@ -1,0 +1,48 @@
+Hermes——AI Agent 个人工作台接入说明
+
+一、使用前提
+
+1. 当前 Windows 用户已经安装并能正常运行 Hermes。
+2. 已在当前用户的工作台“我的”页面生成 Agent Token；令牌只显示一次。
+3. 一台电脑的同一个 Windows 账号只连接一个人的工作台。多人共用电脑时，请使用不同 Windows 账号。
+
+二、安装连接器
+
+1. 获取开源仓库，保持 scripts、docs 与 hermes 目录结构不变。
+2. 打开仓库的 scripts 文件夹，并在此处打开 PowerShell。
+3. 使用你自己的 HTTPS 工作台地址执行：
+
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\install_hermes_workbench.ps1 -WorkbenchUrl "https://workbench.example.com"
+
+   脚本会从该地址自动生成 `/mcp/` 入口。若维护者提供了单独的 MCP 地址，可额外传入 `-McpUrl`，但它必须与工作台使用同一 HTTPS 源。
+
+4. 出现令牌提示后，粘贴刚才在“我的”页面生成的 Agent Token 并按回车。输入过程不会显示字符，这是正常现象。
+5. 安装脚本会配置 personal_workbench MCP、安装普通聊天使用的 personal-workbench 技能、启用聊天图片附件路径交接，并创建登录启动的云端连接器计划任务。
+
+已有安全连接配置时，可使用：
+
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\install_hermes_workbench.ps1 -WorkbenchUrl "https://workbench.example.com" -ReuseExistingConnection
+
+三、验证
+
+1. 重启 Hermes，要求：“请使用 personal_workbench，读取我的工作台概览。”
+2. Hermes 应加载 personal-workbench 技能、调用 get_workspace_overview，并返回当前用户自己的数据。
+3. 在工作台创建一条无敏感信息的测试任务，再要求 Hermes 查询任务。
+4. 向 Hermes 发送一张无敏感信息的运动截图并明确说“上传到工作台”；Hermes 应调用官方桥接，返回记录 ID，并能用 MCP 重新读取该记录。
+5. 查看 `%LOCALAPPDATA%\PersonalWorkbench\logs\hermes-cloud-connector.log`；日志中应出现已连接实时任务通道的提示。
+
+四、固定规则
+
+- personal_workbench 是该用户任务、健康、成长、资讯和财务数据的唯一工作台入口。
+- 不得回退到旧的 `127.0.0.1:8787` 工作台。
+- 只能使用当前 Agent Token 对应的工作空间，不尝试访问其他用户。
+- 写入前先读取现有记录，避免重复；涉及来源、图片、金额和完成状态时不得猜测。
+- 固定提示词位于 docs\HERMES_WORKBENCH_PROMPT.md，实时连接器会自动附加，不需要每次手工粘贴。
+
+五、安全与故障处理
+
+Agent Token 不得写进聊天、Markdown、截图、源码、命令参数或日志。安装脚本只会在隐藏提示中接收它，并交给 Hermes 私密环境保存。
+
+可以在工作台“我的”页面重新签发 Agent Token。重新签发会使旧 Token 立即失效；只有确认泄露或需要更换时才操作，并重新运行安装脚本。
+
+如果 Hermes 安装目录不存在，先修复 Hermes 安装；不要把 Token 放进其他 Python 环境。安装器不会读取或复制其他用户的 SOUL.md、配置备份、日志或聊天附件缓存到源码仓库。

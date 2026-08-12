@@ -1,0 +1,24 @@
+{
+  "name": "AI Agent 个人工作台",
+  "short_name": "AI 工作台",
+  "description": "由你掌控数据、可连接 AI Agent 的长期记忆与行动工作台",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#0d4a38",
+  "icons": [
+    {
+      "src": "/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "记录饮水", "url": "/?action=water" },
+    { "name": "饮食拍照", "url": "/?action=meal" },
+    { "name": "添加任务", "url": "/?action=task" }
+  ]
+}

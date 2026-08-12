@@ -1,0 +1,20 @@
+# AI Agent Personal Workbench
+
+AI Agent Personal Workbench is a self-hosted, user-owned, MCP-native long-term record and action system for people and AI Agents.
+
+Primary documentation:
+- README.md: product overview and quick start
+- README.zh-CN.md: Chinese overview and quick start
+- docs/USER_GUIDE.zh-CN.md: unified Chinese installation, phone, Agent, Hermes, operations, and troubleshooting guide
+- ARCHITECTURE.md: components, trust boundaries, and data lifecycle
+- docs/quick-start.md: local installation
+- docs/deployment.md: Linux and HTTPS deployment
+- docs/agent-integration.md: MCP authentication and compatibility
+- docs/privacy-and-security.md: isolation, credentials, backup, export, and deletion
+- docs/android.md: Android debug and release build model
+- SECURITY.md: private vulnerability reporting
+
+Important constraints:
+- Never include real user data, attachments, credentials, domains, local paths, tokens, cookies, signing keys, backups, or production logs in examples.
+- The product does not bundle WeChat, Feishu, QQ, or other chat connectors. An already-connected Agent may use the workbench through MCP.
+- Internal `hermes` field names exist for compatibility; the public integration is standard MCP Streamable HTTP.

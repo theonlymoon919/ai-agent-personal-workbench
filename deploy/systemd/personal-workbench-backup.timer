@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly encrypted AI Agent Personal Workbench backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Asia/Shanghai
+RandomizedDelaySec=20m
+Persistent=true
+Unit=personal-workbench-backup.service
+
+[Install]
+WantedBy=timers.target

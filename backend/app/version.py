@@ -1,0 +1,2 @@
+APP_VERSION = "0.2.3"
+CLOUD_APP_VERSION = "0.3.0-alpha.3"

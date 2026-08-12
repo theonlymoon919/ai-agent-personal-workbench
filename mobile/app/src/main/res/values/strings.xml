@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AI Agent 个人工作台</string>
+    <string name="settings">连接设置</string>
+</resources>

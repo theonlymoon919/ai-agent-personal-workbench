@@ -1,0 +1,23 @@
+FROM node:22-alpine AS frontend-build
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8787
+WORKDIR /app
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+COPY backend ./backend
+COPY alembic.ini ./alembic.ini
+COPY --from=frontend-build /frontend/dist ./static
+RUN useradd --create-home --uid 10001 workbench \
+    && mkdir -p /data/objects \
+    && chown -R workbench:workbench /app /data
+USER workbench
+EXPOSE 8787
+CMD ["uvicorn", "backend.app.cloud_main:app", "--host", "0.0.0.0", "--port", "8787", "--proxy-headers", "--forwarded-allow-ips", "*"]

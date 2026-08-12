@@ -1,0 +1,13 @@
+[Unit]
+Description=Encrypted backup for AI Agent Personal Workbench
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/personal-workbench-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+PrivateTmp=true
+NoNewPrivileges=true

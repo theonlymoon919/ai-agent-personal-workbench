@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AI Agent 个人工作台">
+  <rect width="512" height="512" rx="112" fill="#fbfaf7"/>
+  <path d="M256 78 392 156v158L256 434 120 314V156L256 78Z" fill="none" stroke="#0d4a38" stroke-width="30" stroke-linejoin="round"/>
+  <path d="m126 163 130 78 130-78M256 241v184" fill="none" stroke="#0d4a38" stroke-width="24" stroke-linejoin="round"/>
+  <path d="M256 241c14-50 49-75 98-73-4 50-33 79-88 87" fill="#8aa07d"/>
+</svg>

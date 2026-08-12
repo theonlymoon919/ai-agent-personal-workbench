@@ -1,0 +1,35 @@
+services:
+  workbench:
+    environment:
+      WORKBENCH_PUBLIC_ORIGIN: https://${WORKBENCH_DOMAIN:?Set WORKBENCH_DOMAIN in .env.cloud}
+      WORKBENCH_SECURE_COOKIES: "true"
+
+  worker:
+    environment:
+      WORKBENCH_PUBLIC_ORIGIN: https://${WORKBENCH_DOMAIN:?Set WORKBENCH_DOMAIN in .env.cloud}
+      WORKBENCH_SECURE_COOKIES: "true"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      WORKBENCH_DOMAIN: ${WORKBENCH_DOMAIN:?Set WORKBENCH_DOMAIN in .env.cloud}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      workbench:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 120
+
+volumes:
+  caddy-data:
+  caddy-config:
