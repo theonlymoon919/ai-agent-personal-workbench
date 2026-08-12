@@ -188,7 +188,8 @@ def create_cloud_mcp(
             "不得猜测图片内容、热量、金额或来源；不确定时明确标记估算。"
             "内容刷新应按用户关注方向分别写入 6 至 10 条高相关去重结果；每条保留可验证来源。"
             "抖音优先保存含数字作品 ID 的规范 source_url；media_url 只能是真实可直接播放的媒体地址，不能重复填写作品网页。"
-            "财务写入前读取有效账户和分类，每笔交易关联实际账户。所有建议应简短、分段、可执行。"
+            "财务写入前读取有效账户和分类，每笔交易关联实际账户；删除前先查询并向用户复述具体流水，取得明确确认后才可软删除。"
+            "所有建议应简短、分段、可执行。"
         ),
         token_verifier=AgentTokenVerifier(database, auth),
         auth=AuthSettings(
@@ -730,6 +731,134 @@ def create_cloud_mcp(
                 idempotency_key=(idempotency_key or f"hermes-mcp:{uuid.uuid4()}")[:160],
                 source="hermes",
             )
+
+    @mcp.tool(description="查询当前工作空间的财务流水。删除前必须先调用并用返回的准确 ID、日期、金额、账户和用途向用户确认；include_deleted=true 时也包含回收站流水。")
+    async def list_finance_transactions(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        transaction_type: Literal["income", "expense", "transfer", "refund"] | None = None,
+        category_id: str | None = None,
+        account_id: str | None = None,
+        search: str | None = None,
+        include_deleted: bool = False,
+        limit: int = 20,
+    ) -> dict:
+        if (start_date is None) != (end_date is None):
+            raise ValueError("开始日期和结束日期必须同时填写")
+        if limit < 1 or limit > 50:
+            raise ValueError("每次最多查询 50 条财务流水")
+        if search is not None and len(search.strip()) > 100:
+            raise ValueError("搜索词不能超过 100 个字符")
+        async with transactions.open("workbench:read") as context:
+            return await context.finance.list_transactions(
+                start_date=_date(start_date, "开始日期") if start_date else None,
+                end_date=_date(end_date, "结束日期") if end_date else None,
+                transaction_type=transaction_type,
+                category_public_id=_uuid(category_id, "财务分类") if category_id else None,
+                account_public_id=_uuid(account_id, "财务账户") if account_id else None,
+                search=search.strip() if search else None,
+                include_deleted=include_deleted,
+                limit=limit,
+            )
+
+    @mcp.tool(description="把一笔财务流水移入回收站。必须使用 list_finance_transactions 返回的准确 ID；首次调用保持 confirmed=false 获取确认摘要，向用户复述后，只有用户明确同意才以 confirmed=true 重试。")
+    async def delete_finance_transaction(
+        transaction_id: str,
+        confirmed: bool = False,
+    ) -> dict:
+        public_id = _uuid(transaction_id, "财务流水")
+        required_scope = "workbench:write" if confirmed else "workbench:read"
+        async with transactions.open(required_scope) as context:
+            current = await context.finance.get_transaction(public_id, include_deleted=True)
+            if current["deleted"]:
+                return {
+                    "ok": True,
+                    "deleted": True,
+                    "already_deleted": True,
+                    "restorable": True,
+                    "transaction": current,
+                }
+            if not confirmed:
+                return {
+                    "ok": False,
+                    "confirmation_required": True,
+                    "message": "请向用户复述这笔流水的日期、类型、金额、账户、商户或用途；取得明确同意后以 confirmed=true 重试。",
+                    "transaction": current,
+                }
+            deleted = await context.finance.set_deleted(public_id, True)
+            return {
+                "ok": True,
+                "deleted": True,
+                "restorable": True,
+                "transaction": deleted,
+            }
+
+    @mcp.tool(description="从回收站恢复一笔财务流水。先用 list_finance_transactions(include_deleted=true) 查到准确 ID。")
+    async def restore_finance_transaction(transaction_id: str) -> dict:
+        public_id = _uuid(transaction_id, "财务流水")
+        async with transactions.open("workbench:write") as context:
+            current = await context.finance.get_transaction(public_id, include_deleted=True)
+            if not current["deleted"]:
+                return {
+                    "ok": True,
+                    "restored": False,
+                    "already_active": True,
+                    "transaction": current,
+                }
+            restored = await context.finance.set_deleted(public_id, False)
+            return {
+                "ok": True,
+                "restored": True,
+                "transaction": restored,
+            }
+
+    @mcp.tool(description="查询当前工作空间的财务预算。归档预算前必须先调用并使用返回的准确 ID；include_archived=true 时也包含已归档预算。")
+    async def list_finance_budgets(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        include_archived: bool = False,
+    ) -> list[dict]:
+        if (start_date is None) != (end_date is None):
+            raise ValueError("开始日期和结束日期必须同时填写")
+        async with transactions.open("workbench:read") as context:
+            return await context.finance.list_budgets(
+                _date(start_date, "开始日期") if start_date else None,
+                _date(end_date, "结束日期") if end_date else None,
+                include_archived,
+            )
+
+    @mcp.tool(description="归档一项财务预算。必须使用 list_finance_budgets 返回的准确 ID；首次调用保持 confirmed=false 获取确认摘要，向用户复述后，只有用户明确同意才以 confirmed=true 重试。")
+    async def delete_finance_budget(
+        budget_id: str,
+        confirmed: bool = False,
+    ) -> dict:
+        public_id = _uuid(budget_id, "财务预算")
+        required_scope = "workbench:write" if confirmed else "workbench:read"
+        async with transactions.open(required_scope) as context:
+            budgets = await context.finance.list_budgets(include_archived=True)
+            current = next((item for item in budgets if item["id"] == str(public_id)), None)
+            if current is None:
+                raise KeyError(str(public_id))
+            if current["status"] == "archived":
+                return {
+                    "ok": True,
+                    "archived": True,
+                    "already_archived": True,
+                    "budget": current,
+                }
+            if not confirmed:
+                return {
+                    "ok": False,
+                    "confirmation_required": True,
+                    "message": "请向用户复述预算周期、金额和分类；取得明确同意后以 confirmed=true 重试。",
+                    "budget": current,
+                }
+            await context.finance.delete_budget(public_id)
+            return {
+                "ok": True,
+                "archived": True,
+                "budget": {**current, "status": "archived"},
+            }
 
     @mcp.tool(description="读取指定日期范围的收支、分类占比、预算和储蓄率汇总。")
     async def get_finance_summary(start_date: str, end_date: str) -> dict:

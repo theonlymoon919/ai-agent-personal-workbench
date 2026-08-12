@@ -72,7 +72,7 @@ flowchart LR
 - Finance accounts, categories, income, expenses, transfers, refunds, budgets, savings goals, recurring rules, summaries, archives, advice, soft deletion, and restore.
 - Personal-IP topic preferences, short-video and AI/technology content with source links and media metadata.
 - Invite-only multi-user registration, password/username change, Agent Token rotation, export, and complete account deletion.
-- MCP tools, Agent job queue, audit events, WebSocket refresh, private object storage, PostgreSQL RLS, Android shell, and encrypted backup workflow.
+- 45 MCP tools, including finance transaction search/soft-delete/restore and budget search/archive; Agent job queue, audit events, WebSocket refresh, private object storage, PostgreSQL RLS, Android shell, and encrypted backup workflow.
 - Optional Hermes reference installer with a persistent chat skill, attachment-path handoff, idempotent health-image upload bridge, and stable background connector.
 
 ## Privacy and tenant isolation

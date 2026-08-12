@@ -1,6 +1,6 @@
 # AI Agent 个人工作台发行版安装指南
 
-本指南面向第一次接触“AI Agent 个人工作台”的普通用户。当前版本是 `v0.3.0-alpha.3` 预发布测试版，重要数据请自行备份。
+本指南面向第一次接触“AI Agent 个人工作台”的普通用户。当前版本是 `v0.3.0-alpha.4` 预发布测试版，重要数据请自行备份。
 
 ## 先理解三个组成部分
 
@@ -24,7 +24,7 @@
 使用 Git：
 
 ```bash
-git clone --branch v0.3.0-alpha.3 https://github.com/theonlymoon919/ai-agent-personal-workbench.git
+git clone --branch v0.3.0-alpha.4 https://github.com/theonlymoon919/ai-agent-personal-workbench.git
 cd ai-agent-personal-workbench
 python scripts/generate_env.py
 docker compose up -d --build
@@ -47,7 +47,7 @@ http://localhost:8787
 
 ```dotenv
 WORKBENCH_IMAGE=ghcr.io/theonlymoon919/ai-agent-personal-workbench
-WORKBENCH_IMAGE_TAG=0.3.0-alpha.3
+WORKBENCH_IMAGE_TAG=0.3.0-alpha.4
 ```
 
 然后运行：
@@ -116,4 +116,4 @@ docker compose start
 
 升级前必须同时备份 PostgreSQL 与私有附件卷，并阅读对应版本的 Release Notes。不要运行 `docker compose down -v`，除非你明确准备永久删除数据库和附件。
 
-更完整的手机、HTTPS、Agent、Hermes、备份和故障排查说明见[《中文安装与使用说明书》](https://github.com/theonlymoon919/ai-agent-personal-workbench/blob/v0.3.0-alpha.3/docs/USER_GUIDE.zh-CN.md)。
+更完整的手机、HTTPS、Agent、Hermes、备份和故障排查说明见[《中文安装与使用说明书》](https://github.com/theonlymoon919/ai-agent-personal-workbench/blob/v0.3.0-alpha.4/docs/USER_GUIDE.zh-CN.md)。

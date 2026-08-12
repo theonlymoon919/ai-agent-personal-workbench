@@ -12,7 +12,7 @@ After an official image is published, set these values in the private `.env` fil
 
 ```dotenv
 WORKBENCH_IMAGE=ghcr.io/theonlymoon919/ai-agent-personal-workbench
-WORKBENCH_IMAGE_TAG=0.3.0-alpha.3
+WORKBENCH_IMAGE_TAG=0.3.0-alpha.4
 ```
 
 Then start without a local build:
