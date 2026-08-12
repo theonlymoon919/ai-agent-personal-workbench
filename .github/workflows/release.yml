@@ -27,7 +27,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         env:
           # Build records embed the GitHub push payload, including private account email metadata.
           DOCKER_BUILD_RECORD_UPLOAD: "false"
