@@ -70,7 +70,7 @@ export const api = {
   restoreTask: (id) => request(`/api/tasks/${id}/restore`, { method: 'POST' }),
   calendar: (startDate, endDate) => request(`/api/calendar?${new URLSearchParams({ start_date: startDate, end_date: endDate }).toString()}`),
   recordWater: (ml) => request('/api/health/water', { method: 'POST', body: JSON.stringify({ ml }) }),
-  recordWeight: (kg) => request('/api/health/weight', { method: 'POST', body: JSON.stringify({ kg }) }),
+  recordWeight: (kg, recordDate = null) => request('/api/health/weight', { method: 'POST', body: JSON.stringify({ kg, record_date: recordDate }) }),
   healthHistory: (range = 30) => {
     const params = new URLSearchParams()
     if (typeof range === 'number') {

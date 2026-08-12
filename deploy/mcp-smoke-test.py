@@ -30,6 +30,9 @@ async def run(url: str, token: str) -> None:
                 "restore_finance_transaction",
                 "list_finance_budgets",
                 "delete_finance_budget",
+                "list_weight_entries",
+                "delete_weight_entry",
+                "restore_weight_entry",
                 "save_generated_learning_plan",
                 "save_suggestion",
             }

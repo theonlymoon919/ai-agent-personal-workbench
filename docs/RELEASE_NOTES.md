@@ -1,15 +1,15 @@
-# AI Agent 个人工作台 v0.3.0-alpha.4
+# AI Agent 个人工作台 v0.3.0-alpha.5
 
-这是修复 Hermes 财务删除能力的公开预发布安装版。网页端原本已经支持财务流水软删除和恢复，但 Hermes MCP 没有暴露对应工具；本版补齐了完整、安全且可恢复的聊天操作流程。项目仍处于 Alpha 阶段，适合自托管体验、测试和反馈；保存重要数据前请先建立备份方案。
+这是补齐历史体重录入、单条手动体重删除/恢复和安全演示流程的公开预发布安装版。项目仍处于 Alpha 阶段，适合自托管体验、测试和反馈；保存重要数据前请先建立备份方案。
 
 ## 下载安装
 
-- [中文发行版安装指南](https://github.com/theonlymoon919/ai-agent-personal-workbench/blob/v0.3.0-alpha.4/docs/RELEASE_INSTALL.zh-CN.md)
-- [完整中文安装与使用说明书](https://github.com/theonlymoon919/ai-agent-personal-workbench/blob/v0.3.0-alpha.4/docs/USER_GUIDE.zh-CN.md)
-- 服务器镜像：`ghcr.io/theonlymoon919/ai-agent-personal-workbench:0.3.0-alpha.4`
+- [中文发行版安装指南](https://github.com/theonlymoon919/ai-agent-personal-workbench/blob/v0.3.0-alpha.5/docs/RELEASE_INSTALL.zh-CN.md)
+- [完整中文安装与使用说明书](https://github.com/theonlymoon919/ai-agent-personal-workbench/blob/v0.3.0-alpha.5/docs/USER_GUIDE.zh-CN.md)
+- 服务器镜像：`ghcr.io/theonlymoon919/ai-agent-personal-workbench:0.3.0-alpha.5`
 - Android：下载本 Release 中的 APK，并使用同名 `.sha256` 文件核对校验值。
 
-当前 GitHub 仓库尚未配置维护者 Android 正式签名 Secrets，因此本次 Android 文件名明确带有 `-debug.apk`，属于 GitHub CI 构建并验证的测试安装包，不是应用商店正式签名版。
+如果 GitHub 仓库未配置维护者 Android 正式签名 Secrets，Android 文件名会明确带有 `-debug.apk`，属于 GitHub CI 构建并验证的测试安装包，不是应用商店正式签名版。
 
 ## 重要说明
 
@@ -21,11 +21,12 @@
 
 ## 本版重点
 
-- Hermes 可以查询财务流水、软删除错误流水并从回收站恢复；
-- Hermes 可以查询并归档财务预算；
-- 流水删除和预算归档都必须先返回只读确认摘要，由用户核对日期、金额、账户、用途或预算周期后明确确认；
-- 账户与分类继续采用停用而非硬删除，避免破坏历史账目；
-- 项目、网页、Android、说明书与 GitHub 仓库统一升级为“AI Agent 个人工作台”；
+- `record_weight` 支持通过 `record_date` 补录历史日期，并拒绝未来日期；
+- 新增 `list_weight_entries`、`delete_weight_entry` 和 `restore_weight_entry`；
+- 删除手动体重必须先查看只读确认摘要，再按准确 ID 软删除单条记录；同日饮水和健康图片不受影响；
+- 网页快速记录体重可选择历史日期；
+- Hermes 技能和提示词明确要求演示使用独立账号、工作空间、浏览器配置和 Hermes Profile；
+- 新增中文录像演示安全工作流，禁止为演示删除、隐藏或改写真实工作空间；
 - 隐私清理后的独立 Apache-2.0 开源发行；
 - Docker 本地安装、GHCR 镜像与 Ubuntu HTTPS 部署；
 - 首位管理员初始化、邀请、多租户隔离和用户数据控制；

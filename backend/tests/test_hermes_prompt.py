@@ -26,6 +26,9 @@ class HermesWorkbenchPromptTests(unittest.TestCase):
         self.assertIn("delete_finance_transaction", prompt)
         self.assertIn("restore_finance_transaction", prompt)
         self.assertIn("delete_finance_budget", prompt)
+        self.assertIn("list_weight_entries", prompt)
+        self.assertIn("delete_weight_entry", prompt)
+        self.assertIn("独立的演示账号", prompt)
 
     def test_realtime_job_prompt_includes_operating_rules_and_job(self) -> None:
         prompt = task_prompt({"id": "job-123", "type": "content_research_refresh", "title": "刷新热点"})

@@ -375,5 +375,6 @@ Token 可能无效、已轮换或属于其他工作空间。在当前用户页�
 - [Hermes 参考接入](integrations/hermes.md)
 - [Android 构建与安装](android.md)
 - [隐私与安全](privacy-and-security.md)
+- [录像演示数据安全方案](VIDEO_DEMO_WORKFLOW.zh-CN.md)
 - [项目架构](../ARCHITECTURE.md)
 - [安全问题报告](../SECURITY.md)

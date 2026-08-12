@@ -662,10 +662,48 @@ def create_cloud_mcp(
         async with transactions.open("workbench:write") as context:
             return await context.health.record_water(amount_ml, source="hermes")
 
-    @mcp.tool(description="记录用户告诉 AI Agent 的体重，单位千克。")
-    async def record_weight(weight_kg: float) -> dict:
+    @mcp.tool(description="记录用户告诉 AI Agent 的体重，单位千克；record_date 可用于补录历史日期（YYYY-MM-DD），不能晚于今天。返回独立的 entry.id，后续删除或恢复使用该 ID。")
+    async def record_weight(weight_kg: float, record_date: str | None = None) -> dict:
         async with transactions.open("workbench:write") as context:
-            return await context.health.record_weight(weight_kg, source="hermes")
+            return await context.health.record_weight(
+                weight_kg,
+                source="hermes",
+                record_date=_date(record_date, "体重日期") if record_date else None,
+            )
+
+    @mcp.tool(description="列出手动录入的体重记录及其独立 ID。可按日期过滤；需要找回误删记录时传 include_deleted=true。")
+    async def list_weight_entries(
+        start_date: str | None = None,
+        end_date: str | None = None,
+        include_deleted: bool = False,
+        limit: int = 100,
+    ) -> list[dict]:
+        async with transactions.open("workbench:read") as context:
+            return await context.health.list_weight_entries(
+                start_date=_date(start_date, "开始日期") if start_date else None,
+                end_date=_date(end_date, "结束日期") if end_date else None,
+                include_deleted=include_deleted,
+                limit=limit,
+            )
+
+    @mcp.tool(description="把一条手动体重记录移入回收站。必须先用 list_weight_entries 核对独立 ID、日期和数值并取得用户明确确认；第一次调用 confirmed=false 只预览，确认后再传 true。不会删除同日饮水或健康图片。")
+    async def delete_weight_entry(weight_entry_id: str, confirmed: bool = False) -> dict:
+        entry_id = _uuid(weight_entry_id, "体重记录")
+        if not confirmed:
+            async with transactions.open("workbench:read") as context:
+                entry = await context.health.get_weight_entry(entry_id)
+                return {
+                    "confirmation_required": True,
+                    "message": "请确认只删除这条手动体重记录；同日饮水和健康图片不会被删除。确认后再次调用并传 confirmed=true。",
+                    "entry": entry,
+                }
+        async with transactions.open("workbench:write") as context:
+            return await context.health.set_weight_entry_deleted(entry_id, True)
+
+    @mcp.tool(description="从回收站恢复一条手动体重记录；先用 list_weight_entries(include_deleted=true) 取得独立 ID。")
+    async def restore_weight_entry(weight_entry_id: str) -> dict:
+        async with transactions.open("workbench:write") as context:
+            return await context.health.set_weight_entry_deleted(_uuid(weight_entry_id, "体重记录"), False)
 
     @mcp.tool(description="列出财务分类和账户；记账前先读取有效 ID。")
     async def get_finance_reference_data() -> dict:

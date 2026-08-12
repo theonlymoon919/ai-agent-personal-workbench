@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -201,6 +201,18 @@ class HealthRepository:
         )
         await self.session.execute(statement)
 
+    @staticmethod
+    def _weight_payload(entry: WeightEntry) -> dict:
+        return {
+            "id": str(entry.public_id),
+            "record_date": entry.record_date.isoformat(),
+            "occurred_at": entry.occurred_at.isoformat(),
+            "weight_kg": _float(entry.weight_kg),
+            "source": entry.source,
+            "deleted": entry.deleted_at is not None,
+            "created_at": entry.created_at.isoformat(),
+        }
+
     async def record_water(self, amount_ml: int, source: str = "user") -> dict:
         if not 1 <= amount_ml <= 5000:
             raise ValueError("单次饮水量必须在 1–5000 ml 之间")
@@ -219,23 +231,96 @@ class HealthRepository:
         await self.session.flush()
         return await self.today_overview(now.date())
 
-    async def record_weight(self, weight_kg: float, source: str = "user") -> dict:
+    async def record_weight(
+        self,
+        weight_kg: float,
+        source: str = "user",
+        record_date: date | None = None,
+    ) -> dict:
         if not 20 < weight_kg <= 400:
             raise ValueError("体重必须在 20–400 kg 之间")
         now = self.now()
-        self.session.add(
-            WeightEntry(
-                workspace_id=self.workspace_id,
-                record_date=now.date(),
-                occurred_at=now,
-                weight_kg=Decimal(str(weight_kg)),
-                source=source,
+        target_date = record_date or now.date()
+        if target_date > now.date():
+            raise ValueError("不能记录未来日期的体重")
+        occurred_at = (
+            now
+            if target_date == now.date()
+            else datetime.combine(target_date, time(hour=12), tzinfo=ZoneInfo(self.timezone_name))
+        )
+        entry = WeightEntry(
+            workspace_id=self.workspace_id,
+            record_date=target_date,
+            occurred_at=occurred_at,
+            weight_kg=Decimal(str(weight_kg)),
+            source=source,
+        )
+        self.session.add(entry)
+        await self._mark_day_stale(target_date)
+        await self.session.flush()
+        self.core._changed("health.weight_recorded", "weight_entry", str(entry.public_id), "record_weight")
+        overview = await self.today_overview(target_date)
+        return {**overview, "entry": self._weight_payload(entry)}
+
+    async def list_weight_entries(
+        self,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        include_deleted: bool = False,
+        limit: int = 100,
+    ) -> list[dict]:
+        if not 1 <= limit <= 500:
+            raise ValueError("体重记录条数必须在 1–500 之间")
+        if start_date and end_date and start_date > end_date:
+            raise ValueError("开始日期不能晚于结束日期")
+        conditions = [WeightEntry.workspace_id == self.workspace_id]
+        if start_date:
+            conditions.append(WeightEntry.record_date >= start_date)
+        if end_date:
+            conditions.append(WeightEntry.record_date <= end_date)
+        if not include_deleted:
+            conditions.append(WeightEntry.deleted_at.is_(None))
+        entries = list(
+            await self.session.scalars(
+                select(WeightEntry)
+                .where(*conditions)
+                .order_by(WeightEntry.record_date.desc(), WeightEntry.occurred_at.desc(), WeightEntry.id.desc())
+                .limit(limit)
             )
         )
-        await self._mark_day_stale(now.date())
-        self.core._changed("health.weight_recorded", "weight_entry", now.isoformat(), "record_weight")
+        return [self._weight_payload(entry) for entry in entries]
+
+    async def get_weight_entry(self, public_id: uuid.UUID, include_deleted: bool = True) -> dict:
+        conditions = [
+            WeightEntry.workspace_id == self.workspace_id,
+            WeightEntry.public_id == public_id,
+        ]
+        if not include_deleted:
+            conditions.append(WeightEntry.deleted_at.is_(None))
+        entry = await self.session.scalar(select(WeightEntry).where(*conditions))
+        if entry is None:
+            raise KeyError(str(public_id))
+        return self._weight_payload(entry)
+
+    async def set_weight_entry_deleted(self, public_id: uuid.UUID, deleted: bool) -> dict:
+        entry = await self.session.scalar(
+            select(WeightEntry).where(
+                WeightEntry.workspace_id == self.workspace_id,
+                WeightEntry.public_id == public_id,
+            )
+        )
+        if entry is None:
+            raise KeyError(str(public_id))
+        entry.deleted_at = datetime.now(timezone.utc) if deleted else None
+        await self._mark_day_stale(entry.record_date)
+        self.core._changed(
+            "health.weight_deleted" if deleted else "health.weight_restored",
+            "weight_entry",
+            str(public_id),
+            "delete_weight_entry" if deleted else "restore_weight_entry",
+        )
         await self.session.flush()
-        return await self.today_overview(now.date())
+        return self._weight_payload(entry)
 
     async def today_overview(self, target_date: date | None = None) -> dict:
         target_date = target_date or self.now().date()
