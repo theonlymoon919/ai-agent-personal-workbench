@@ -25,6 +25,11 @@ async def run(url: str, token: str) -> None:
                 "complete_agent_job",
                 "load_health_image",
                 "create_finance_transaction",
+                "list_finance_transactions",
+                "delete_finance_transaction",
+                "restore_finance_transaction",
+                "list_finance_budgets",
+                "delete_finance_budget",
                 "save_generated_learning_plan",
                 "save_suggestion",
             }

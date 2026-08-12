@@ -249,23 +249,135 @@ class CloudMcpContractTests(unittest.TestCase):
         app = create_cloud_app(settings)
         self.assertTrue(any(route.path == "/mcp" for route in app.routes))
         tools = set(app.state.cloud_mcp._tool_manager._tools)
-        self.assertGreaterEqual(len(tools), 20)
+        self.assertGreaterEqual(len(tools), 45)
         self.assertTrue(
             {
                 "claim_next_agent_job",
                 "load_health_image",
                 "save_health_record_analysis",
                 "create_finance_transaction",
+                "list_finance_transactions",
+                "delete_finance_transaction",
+                "restore_finance_transaction",
+                "list_finance_budgets",
+                "delete_finance_budget",
                 "save_generated_learning_plan",
                 "save_content_item",
             }.issubset(tools)
         )
+        delete_transaction = app.state.cloud_mcp._tool_manager._tools["delete_finance_transaction"]
+        self.assertIn("confirmed", delete_transaction.parameters["properties"])
+        self.assertNotIn("confirmed", delete_transaction.parameters["required"])
+        self.assertIn("明确同意", delete_transaction.description)
+        delete_budget = app.state.cloud_mcp._tool_manager._tools["delete_finance_budget"]
+        self.assertIn("confirmed", delete_budget.parameters["properties"])
+        self.assertIn("归档", delete_budget.description)
         with TestClient(app) as client:
             response = client.post(
                 "/mcp/",
                 json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
             )
         self.assertEqual(response.status_code, 401)
+
+    def test_finance_delete_tools_require_confirmation_before_writing(self) -> None:
+        settings = CloudSettings(
+            database_url="postgresql+psycopg://user:pass@127.0.0.1/workbench",
+            token_pepper="x" * 48,
+            public_origin="https://workbench.example.com",
+            data_root=Path("work/test-cloud-mcp-finance-delete"),
+        )
+        tools = create_cloud_app(settings).state.cloud_mcp._tool_manager._tools
+        transaction_id = str(uuid.uuid4())
+        budget_id = str(uuid.uuid4())
+
+        class FakeFinance:
+            def __init__(self) -> None:
+                self.transaction = {
+                    "id": transaction_id,
+                    "local_date": "2026-08-12",
+                    "type": "expense",
+                    "amount_yuan": "28.50",
+                    "account": {"name": "日常账户"},
+                    "merchant": "午餐",
+                    "purpose": "工作餐",
+                    "deleted": False,
+                }
+                self.budget = {
+                    "id": budget_id,
+                    "period_start": "2026-08-01",
+                    "period_end": "2026-08-31",
+                    "amount_yuan": "2000.00",
+                    "category": {"name": "餐饮"},
+                    "status": "active",
+                }
+                self.transaction_deletes: list[bool] = []
+                self.budget_deletes: list[uuid.UUID] = []
+
+            async def get_transaction(self, _public_id: uuid.UUID, include_deleted: bool = False) -> dict:
+                self.assert_include_deleted = include_deleted
+                return dict(self.transaction)
+
+            async def set_deleted(self, _public_id: uuid.UUID, deleted: bool) -> dict:
+                self.transaction_deletes.append(deleted)
+                return {**self.transaction, "deleted": deleted}
+
+            async def list_budgets(self, *args, **kwargs) -> list[dict]:
+                return [dict(self.budget)]
+
+            async def delete_budget(self, public_id: uuid.UUID) -> dict:
+                self.budget_deletes.append(public_id)
+                return {"id": str(public_id), "deleted": True}
+
+        finance = FakeFinance()
+        context = type("FakeContext", (), {"finance": finance})()
+        scopes: list[str] = []
+
+        class FakeOpen:
+            async def __aenter__(self):
+                return context
+
+            async def __aexit__(self, _exc_type, _exc, _traceback):
+                return False
+
+        def fake_open(_self, scope: str) -> FakeOpen:
+            scopes.append(scope)
+            return FakeOpen()
+
+        with patch("backend.app.cloud.mcp_server.AgentToolTransactions.open", new=fake_open):
+            preview = asyncio.run(
+                tools["delete_finance_transaction"].fn(transaction_id=transaction_id)
+            )
+            self.assertTrue(preview["confirmation_required"])
+            self.assertEqual(finance.transaction_deletes, [])
+            self.assertEqual(scopes[-1], "workbench:read")
+
+            deleted = asyncio.run(
+                tools["delete_finance_transaction"].fn(
+                    transaction_id=transaction_id,
+                    confirmed=True,
+                )
+            )
+            self.assertTrue(deleted["deleted"])
+            self.assertEqual(finance.transaction_deletes, [True])
+            self.assertEqual(scopes[-1], "workbench:write")
+
+            budget_preview = asyncio.run(
+                tools["delete_finance_budget"].fn(budget_id=budget_id)
+            )
+            self.assertTrue(budget_preview["confirmation_required"])
+            self.assertEqual(finance.budget_deletes, [])
+
+            archived = asyncio.run(
+                tools["delete_finance_budget"].fn(
+                    budget_id=budget_id,
+                    confirmed=True,
+                )
+            )
+            self.assertTrue(archived["archived"])
+            self.assertEqual(finance.budget_deletes, [uuid.UUID(budget_id)])
+
+        with self.assertRaisesRegex(ValueError, "最多查询 50 条"):
+            asyncio.run(tools["list_finance_transactions"].fn(limit=51))
 
 
 class CloudGrowthContractTests(unittest.TestCase):

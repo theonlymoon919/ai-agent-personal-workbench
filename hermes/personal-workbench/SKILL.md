@@ -3,7 +3,7 @@ name: personal-workbench
 description: Use when the user mentions 个人工作台、工作台、任务、长期项目、日历、健康记录、饮食图片、体重图片、运动截图、学习计划、书影音、热点资讯或财务记账，尤其是要求把微信、飞书、QQ 等聊天附件上传或写入工作台时。Load the current personal_workbench MCP workflow, use the official local health-image bridge for attachments, and never fall back to the retired localhost workbench.
 license: Apache-2.0
 metadata:
-  version: 1.0.0
+version: 1.1.0
   author: AI Agent Personal Workbench
   platforms: [windows]
   hermes:
@@ -62,8 +62,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\PersonalW
 1. 写入前先读取并查重；用户只是咨询时先回答，不擅自写入。
 2. 项目结构使用“项目 → 阶段 → 任务”；属于长期项目的任务同时填写 `project_id` 和 `phase_id`。
 3. 记账前调用 `get_finance_reference_data`，使用真实账户和分类 ID；不猜金额。
-4. 修改、删除和恢复必须使用当前 MCP 提供的对应工具，不直接改存储文件。
-5. 涉及来源、图片、日期、金额和完成状态时，以工具返回值为准；不确定就明确标注。
+4. 删除财务流水前先调用 `list_finance_transactions` 查找候选项。向用户复述日期、类型、金额、账户、商户或用途并取得明确同意；未确认时只调用 `delete_finance_transaction(..., confirmed=false)` 读取确认摘要，确认后才允许使用同一准确 ID 调用 `confirmed=true`。删除是可恢复的软删除，恢复时先查询包含回收站记录，再调用 `restore_finance_transaction`。
+5. 归档预算前先调用 `list_finance_budgets`，复述周期、金额和分类并取得明确同意，再调用 `delete_finance_budget(..., confirmed=true)`。账户和分类只停用，不为清理历史账目而硬删除。
+6. 修改、删除和恢复必须使用当前 MCP 提供的对应工具，不直接改存储文件。
+7. 涉及来源、图片、日期、金额和完成状态时，以工具返回值为准；不确定就明确标注。
 
 ## Common Pitfalls
 

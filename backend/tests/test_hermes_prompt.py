@@ -22,6 +22,10 @@ class HermesWorkbenchPromptTests(unittest.TestCase):
         self.assertIn("禁止访问、启动或重新配置", prompt)
         self.assertIn("127.0.0.1:8787", prompt)
         self.assertIn("不要调用并不存在的旧工具名", prompt)
+        self.assertIn("list_finance_transactions", prompt)
+        self.assertIn("delete_finance_transaction", prompt)
+        self.assertIn("restore_finance_transaction", prompt)
+        self.assertIn("delete_finance_budget", prompt)
 
     def test_realtime_job_prompt_includes_operating_rules_and_job(self) -> None:
         prompt = task_prompt({"id": "job-123", "type": "content_research_refresh", "title": "刷新热点"})

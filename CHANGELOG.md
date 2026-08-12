@@ -4,6 +4,18 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## [Unreleased]
 
+## [0.3.0-alpha.4] - 2026-08-12
+
+### Fixed
+
+- Added Hermes MCP tools to search, soft-delete, and restore finance transactions.
+- Added Hermes MCP tools to list and archive finance budgets.
+- Required a read-only confirmation preview before any Hermes finance deletion or budget archive, including the exact record details the user must confirm.
+
+### Changed
+
+- Updated the persistent Hermes skill, operating prompt, and MCP smoke test for the complete finance deletion workflow.
+
 ## [0.3.0-alpha.3] - 2026-08-12
 
 ### Changed
