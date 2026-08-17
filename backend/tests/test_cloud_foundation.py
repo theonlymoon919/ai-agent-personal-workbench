@@ -42,7 +42,7 @@ from backend.app.cloud.storage import LocalPrivateObjectStore
 from backend.app.cloud.image_processing import normalize_health_image
 from backend.app.cloud.rate_limit import MemoryRateLimiter
 from backend.app.china_calendar import calendar_days
-from backend.app.models import LearningPlanUpdate, ProjectPhaseCreate, TaskCreate, TaskUpdate, WeightRecord
+from backend.app.models import LearningPlanUpdate, ProjectPhaseCreate, TaskCreate, TaskUpdate, WaterRecord, WeightRecord
 
 
 class CloudRateLimitTests(unittest.TestCase):
@@ -277,6 +277,8 @@ class CloudMcpContractTests(unittest.TestCase):
         self.assertIn("归档", delete_budget.description)
         record_weight = app.state.cloud_mcp._tool_manager._tools["record_weight"]
         self.assertIn("record_date", record_weight.parameters["properties"])
+        record_water = app.state.cloud_mcp._tool_manager._tools["record_water"]
+        self.assertIn("record_date", record_water.parameters["properties"])
         delete_weight = app.state.cloud_mcp._tool_manager._tools["delete_weight_entry"]
         self.assertIn("confirmed", delete_weight.parameters["properties"])
         self.assertIn("同日饮水", delete_weight.description)
@@ -522,6 +524,10 @@ class CloudProjectPlanningContractTests(unittest.TestCase):
 
     def test_weight_schema_accepts_a_historical_record_date(self) -> None:
         payload = WeightRecord(kg=56.0, record_date=date(2026, 8, 1))
+        self.assertEqual(payload.record_date, date(2026, 8, 1))
+
+    def test_water_schema_accepts_a_historical_record_date(self) -> None:
+        payload = WaterRecord(ml=1500, record_date=date(2026, 8, 1))
         self.assertEqual(payload.record_date, date(2026, 8, 1))
 
     def test_mcp_exposes_full_project_and_recycle_bin_workflow(self) -> None:

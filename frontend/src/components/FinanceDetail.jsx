@@ -77,6 +77,14 @@ function rangeFor(mode, custom) {
   return { startDate: localISO(start), endDate: localISO(today) }
 }
 
+function archiveRange(endDate, months = 3) {
+  const end = new Date(`${endDate}T12:00:00`)
+  end.setDate(1)
+  const start = new Date(end)
+  start.setMonth(start.getMonth() - Math.max(0, months - 1))
+  return { startMonth: localISO(start), endMonth: localISO(end) }
+}
+
 function formatMoney(value) {
   const numeric = Number(value || 0)
   return new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(numeric)
@@ -362,10 +370,11 @@ export function FinanceDetail({ onBack, onDashboardReload }) {
   const loadRange = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setLoading(true)
     try {
+      const monthlyArchive = archiveRange(activeRange.endDate)
       const [summaryResult, transactionResult, archiveResult] = await Promise.all([
         api.financeSummary(activeRange.startDate, activeRange.endDate),
         api.financeTransactions({ ...filters, ...activeRange, page, pageSize: 12 }),
-        api.financeArchive(activeRange.startDate, activeRange.endDate),
+        api.financeArchive(monthlyArchive.startMonth, monthlyArchive.endMonth),
       ])
       setSummary(summaryResult)
       setTransactions(transactionResult)
