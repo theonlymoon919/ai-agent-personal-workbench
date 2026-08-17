@@ -43,12 +43,23 @@ const scaleMeta = {
 
 function parseDate(value) {
   if (!value) return null
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null
+    const parsed = new Date(value)
+    parsed.setHours(12, 0, 0, 0)
+    return parsed
+  }
   const parsed = new Date(`${String(value).slice(0, 10)}T12:00:00`)
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 function isoDate(value) {
-  return value ? String(value).slice(0, 10) : ''
+  const parsed = parseDate(value)
+  if (!parsed) return ''
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function dateDiff(start, end) {
@@ -85,6 +96,12 @@ function rangeFromTasks(tasks) {
     start: new Date(Math.min(...dates)).toISOString().slice(0, 10),
     end: new Date(Math.max(...dates)).toISOString().slice(0, 10),
   }
+}
+
+function timelineTicks(start, end, count = 4) {
+  const totalDays = Math.max(1, dateDiff(start, end))
+  const offsets = Array.from({ length: count }, (_, index) => Math.round((totalDays * index) / (count - 1)))
+  return [...new Set(offsets)].map((offset) => addDays(start, offset))
 }
 
 function StatusBadge({ status }) {
@@ -260,7 +277,8 @@ function MobileTimeline({ plan, onClose, onSelectTask }) {
   const start = parseDate(allRange.start) || addDays(new Date(), -7)
   const end = parseDate(allRange.end) || addDays(new Date(), 30)
   const total = Math.max(1, dateDiff(start, end) + 1)
-  return <div className="mobile-timeline-overlay" role="dialog" aria-modal="true"><header><button type="button" onClick={onClose}><ArrowLeft size={21} />返回阶段</button><div><strong>项目时间轴</strong><small>{formatDate(allRange.start, true)} — {formatDate(allRange.end, true)}</small></div></header><div className="mobile-timeline-body">{phases.map((phase) => { const phaseTasks = tasks.filter((task) => task.phase_id === phase.id); return <section key={phase.id}><h3>{phase.name}<span>{phase.progress_percent}%</span></h3>{phaseTasks.map((task) => { const range = taskRange(task); const taskStart = parseDate(range.start); const taskEnd = parseDate(range.end); const left = taskStart ? Math.max(0, dateDiff(start, taskStart) / total * 100) : 0; const width = taskStart && taskEnd ? Math.max(3, (dateDiff(taskStart, taskEnd) + 1) / total * 100) : 0; return <button type="button" onClick={() => { onClose(); onSelectTask(task) }} key={task.id}><span><strong>{task.title}</strong><small>{taskStart ? `${formatDate(range.start)} — ${formatDate(range.end)}` : '未排期'}</small></span><i>{taskStart ? <b style={{ marginLeft: `${left}%`, width: `${width}%` }}><em style={{ width: `${task.progress_percent}%` }} /></b> : <small>未排期</small>}</i></button> })}</section> })}</div></div>
+  const ticks = timelineTicks(start, end)
+  return <div className="mobile-timeline-overlay" role="dialog" aria-modal="true"><header><button type="button" onClick={onClose}><ArrowLeft size={21} />返回阶段</button><div><strong>项目时间轴</strong><small>{formatDate(start, true)} — {formatDate(end, true)}</small></div></header><div className="mobile-timeline-body"><div className="mobile-timeline-axis" aria-label="项目时间刻度"><span>任务时间</span><div>{ticks.map((tick) => <time dateTime={isoDate(tick)} key={tick.toISOString()}>{formatDate(tick)}</time>)}</div></div>{phases.map((phase) => { const phaseTasks = tasks.filter((task) => task.phase_id === phase.id); return <section key={phase.id}><h3>{phase.name}<span>{phase.progress_percent}%</span></h3>{phaseTasks.map((task) => { const range = taskRange(task); const taskStart = parseDate(range.start); const taskEnd = parseDate(range.end); const left = taskStart ? Math.max(0, dateDiff(start, taskStart) / total * 100) : 0; const width = taskStart && taskEnd ? Math.max(3, (dateDiff(taskStart, taskEnd) + 1) / total * 100) : 0; return <button type="button" onClick={() => { onClose(); onSelectTask(task) }} key={task.id}><span><strong>{task.title}</strong><small>{taskStart ? `${formatDate(range.start)} — ${formatDate(range.end)}` : '未排期'}</small></span><i>{taskStart ? <b style={{ marginLeft: `${left}%`, width: `${width}%` }}><em style={{ width: `${task.progress_percent}%` }} /></b> : <small>未排期</small>}</i></button> })}</section> })}</div></div>
 }
 
 export function ProjectPlannerDetail({ initialProjectId, onBack, onDashboardReload, onToast }) {

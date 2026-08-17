@@ -657,10 +657,14 @@ def create_cloud_mcp(
                 generated_by="hermes",
             )
 
-    @mcp.tool(description="记录用户告诉 AI Agent 的饮水量，单位毫升。")
-    async def record_water(amount_ml: int) -> dict:
+    @mcp.tool(description="记录用户告诉 AI Agent 的饮水量，单位毫升；record_date 可用于补录历史日期（YYYY-MM-DD），不能晚于今天。")
+    async def record_water(amount_ml: int, record_date: str | None = None) -> dict:
         async with transactions.open("workbench:write") as context:
-            return await context.health.record_water(amount_ml, source="hermes")
+            return await context.health.record_water(
+                amount_ml,
+                source="hermes",
+                record_date=_date(record_date, "饮水日期") if record_date else None,
+            )
 
     @mcp.tool(description="记录用户告诉 AI Agent 的体重，单位千克；record_date 可用于补录历史日期（YYYY-MM-DD），不能晚于今天。返回独立的 entry.id，后续删除或恢复使用该 ID。")
     async def record_weight(weight_kg: float, record_date: str | None = None) -> dict:

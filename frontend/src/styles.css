@@ -1548,7 +1548,7 @@ button.content-item:hover strong, a.content-item:hover strong { color: var(--gre
 .planner-row-actions { display: flex; justify-content: flex-end; gap: 2px; }
 .planner-row-actions button { display: grid; place-items: center; width: 24px; height: 30px; padding: 0; color: #63736b; border: 0; border-radius: 7px; background: transparent; cursor: pointer; }
 .planner-row-actions button:hover { color: var(--green-900); background: #eaf1eb; }
-.planner-timeline-scroll { min-width: 0; overflow: auto hidden; overscroll-behavior: contain; }
+.planner-timeline-scroll { min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-inline: contain; overscroll-behavior-block: auto; touch-action: pan-x pan-y; }
 .planner-timeline { position: relative; min-height: 100%; }
 .planner-timeline > header { position: sticky; top: 0; z-index: 3; height: 48px; border-bottom: 1px solid #dfe3df; background: #f8f9f7; }
 .planner-timeline > header span { position: absolute; bottom: 9px; transform: translateX(6px); color: #64716a; font-size: 8px; white-space: nowrap; }
@@ -1682,6 +1682,10 @@ button.content-item:hover strong, a.content-item:hover strong { color: var(--gre
   .mobile-timeline-overlay > header strong { font-size: 13px; }
   .mobile-timeline-overlay > header small { margin-top: 3px; color: var(--muted); font-size: 8px; }
   .mobile-timeline-body { padding: 14px 14px 34px; }
+  .mobile-timeline-axis { position: sticky; z-index: 1; top: 66px; display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; min-height: 38px; margin: -14px -1px 11px; padding: 5px 13px 5px 12px; color: #68736d; border: 1px solid #dfe3df; border-top: 0; border-radius: 0 0 11px 11px; background: rgba(248, 249, 247, .97); backdrop-filter: blur(10px); font-size: 7px; }
+  .mobile-timeline-axis > span { font-weight: 700; }
+  .mobile-timeline-axis > div { display: flex; justify-content: space-between; min-width: 0; }
+  .mobile-timeline-axis time { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .mobile-timeline-body section { overflow: hidden; margin-bottom: 11px; border: 1px solid #dfe3df; border-radius: 13px; background: #fff; }
   .mobile-timeline-body h3 { display: flex; align-items: center; margin: 0; padding: 13px 14px; color: var(--green-900); border-bottom: 1px solid #e6e9e6; font-size: 12px; }
   .mobile-timeline-body h3 span { margin-left: auto; font-size: 9px; }

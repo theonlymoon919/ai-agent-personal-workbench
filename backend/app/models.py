@@ -64,6 +64,7 @@ class StartupUpdate(BaseModel):
 
 class WaterRecord(BaseModel):
     ml: int = Field(gt=0, le=3000)
+    record_date: date | None = None
 
 
 class WeightRecord(BaseModel):

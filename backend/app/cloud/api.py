@@ -1102,7 +1102,7 @@ def create_cloud_app(
             context.identity.workspace_public_id,
             "user",
             context.identity.user_public_id,
-        ).record_water(payload.ml)
+        ).record_water(payload.ml, record_date=payload.record_date)
 
     @app.post("/api/health/weight")
     async def record_weight(

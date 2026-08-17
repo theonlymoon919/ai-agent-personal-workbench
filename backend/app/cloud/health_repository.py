@@ -213,23 +213,36 @@ class HealthRepository:
             "created_at": entry.created_at.isoformat(),
         }
 
-    async def record_water(self, amount_ml: int, source: str = "user") -> dict:
+    async def record_water(
+        self,
+        amount_ml: int,
+        source: str = "user",
+        record_date: date | None = None,
+    ) -> dict:
         if not 1 <= amount_ml <= 5000:
             raise ValueError("单次饮水量必须在 1–5000 ml 之间")
         now = self.now()
+        target_date = record_date or now.date()
+        if target_date > now.date():
+            raise ValueError("不能记录未来日期的饮水")
+        occurred_at = (
+            now
+            if target_date == now.date()
+            else datetime.combine(target_date, time(hour=12), tzinfo=ZoneInfo(self.timezone_name))
+        )
         self.session.add(
             WaterEntry(
                 workspace_id=self.workspace_id,
-                record_date=now.date(),
-                occurred_at=now,
+                record_date=target_date,
+                occurred_at=occurred_at,
                 amount_ml=amount_ml,
                 source=source,
             )
         )
-        await self._mark_day_stale(now.date())
-        self.core._changed("health.water_recorded", "water_entry", now.isoformat(), "record_water")
+        await self._mark_day_stale(target_date)
+        self.core._changed("health.water_recorded", "water_entry", occurred_at.isoformat(), "record_water")
         await self.session.flush()
-        return await self.today_overview(now.date())
+        return await self.today_overview(target_date)
 
     async def record_weight(
         self,
