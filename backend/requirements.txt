@@ -5,7 +5,7 @@ python-multipart==0.0.32
 PyYAML==6.0.2
 mcp[cli]==1.29.0
 lunar_python==1.4.8
-SQLAlchemy[asyncio]>=2.0,<2.1
+SQLAlchemy[asyncio]>=2.0.51,<2.1
 alembic>=1.18,<1.19
 psycopg[binary]>=3.2,<4
 pwdlib[argon2]>=0.3,<1
